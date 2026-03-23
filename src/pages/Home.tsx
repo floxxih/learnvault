@@ -169,5 +169,3 @@ const FeatureCard: React.FC<{
 )
 
 export default Home
-
-export default Home
