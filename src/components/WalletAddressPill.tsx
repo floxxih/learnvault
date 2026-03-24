@@ -4,12 +4,15 @@ import { useState } from "react"
 import { shortenAddress } from "../util/contract"
 import { stellarNetwork } from "../contracts/util"
 
+import { useWallet } from "../hooks/useWallet"
+
 interface Props {
   address: string
   showLink?: boolean
 }
 
 export const WalletAddressPill = ({ address, showLink = false }: Props) => {
+  const { network: walletNetwork } = useWallet()
   const [copied, setCopied] = useState(false)
 
   const copyToClipboard = async (e: React.MouseEvent) => {
@@ -24,10 +27,18 @@ export const WalletAddressPill = ({ address, showLink = false }: Props) => {
   }
 
   const getExplorerUrl = () => {
-    const network = stellarNetwork.toLowerCase()
-    // For LOCAL, we don't have a standard explorer, but we'll default to testnet for link visualization if forced
-    const explorerNetwork = network === "local" ? "testnet" : network
-    return `https://stellar.expert/explorer/${explorerNetwork}/account/${address}`
+    const activeNetwork = (walletNetwork || stellarNetwork).toLowerCase()
+    
+    if (activeNetwork === "public" || activeNetwork === "mainnet") {
+      return `https://stellar.expert/explorer/public/account/${address}`
+    }
+    
+    if (activeNetwork === "futurenet") {
+      return `https://futurenet.stellar.expert/explorer/futurenet/account/${address}`
+    }
+
+    // Default to Testnet for everything else (TESTNET, LOCAL, etc.)
+    return `https://testnet.stellar.expert/explorer/testnet/account/${address}`
   }
 
   return (
