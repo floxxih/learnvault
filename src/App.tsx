@@ -12,6 +12,7 @@ import Leaderboard from "./pages/Leaderboard"
 import Learn from "./pages/Learn"
 import NotFound from "./pages/NotFound"
 import Profile from "./pages/Profile"
+import ScholarshipApply from "./pages/ScholarshipApply"
 import Treasury from "./pages/Treasury"
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
 				<Route path="/dao" element={<Dao />} />
 				<Route path="/leaderboard" element={<Leaderboard />} />
 				<Route path="/profile" element={<Profile />} />
+				<Route path="/scholarships/apply" element={<ScholarshipApply />} />
 				<Route path="/admin" element={<Admin />} />
 				<Route path="/treasury" element={<Treasury />} />
 				<Route path="/credentials/:nftId" element={<Credential />} />
