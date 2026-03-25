@@ -14,8 +14,8 @@
 //! Implements: https://github.com/bakeronchain/learnvault/issues/5
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, Address,
-    Env, String, Symbol,
+    Address, Env, String, Symbol, contract, contracterror, contractevent, contractimpl,
+    contracttype, panic_with_error, symbol_short,
 };
 
 // ---------------------------------------------------------------------------
@@ -52,20 +52,55 @@ pub enum DataKey {
 }
 
 // ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+/// Emitted on every successful `mint` call.
+///
+/// Fields:
+/// - `learner`   — the address that received LRN
+/// - `amount`    — the number of LRN tokens minted
+/// - `course_id` — the course identifier that triggered the mint
+#[contractevent]
+pub struct MilestoneCompleted {
+    pub learner: Address,
+    pub amount: i128,
+    pub course_id: String,
+}
+
+// ---------------------------------------------------------------------------
 // Contract
 // ---------------------------------------------------------------------------
 
 #[contract]
 pub struct LearnToken;
 
+#[contractevent(topics = ["mint"])]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LRNMinted {
+    #[topic]
+    pub learner: Address,
+    pub amount: i128,
+}
+
 #[contractimpl]
 impl LearnToken {
     /// Initialise the contract.
     ///
-    /// Must be called once by the deployer.  `admin` should be set to the
+    /// Must be called once by the deployer. `admin` should be set to the
     /// `CourseMilestone` contract address once that is deployed.
     pub fn initialize(env: Env, admin: Address) {
-        todo!("set admin, name='LearnToken', symbol='LRN', decimals=7 in instance storage")
+        if env.storage().instance().has(&ADMIN_KEY) {
+            panic_with_error!(&env, LRNError::Unauthorized);
+        }
+        env.storage().instance().set(&ADMIN_KEY, &admin);
+        env.storage()
+            .instance()
+            .set(&NAME_KEY, &String::from_str(&env, "LearnToken"));
+        env.storage()
+            .instance()
+            .set(&SYMBOL_KEY, &String::from_str(&env, "LRN"));
+        env.storage().instance().set(&DECIMALS_KEY, &7_u32);
     }
 
     // -----------------------------------------------------------------------
@@ -74,36 +109,101 @@ impl LearnToken {
 
     /// Mint `amount` LRN to `to`.  Only callable by the admin.
     pub fn mint(env: Env, to: Address, amount: i128) {
-        todo!("require admin auth, validate amount > 0, update balance + total supply, emit lrn_mint event")
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .unwrap_or_else(|| panic_with_error!(&env, LRNError::NotInitialized));
+        admin.require_auth();
+
+        if amount <= 0 {
+            panic_with_error!(&env, LRNError::ZeroAmount);
+        }
+
+        // Update balance
+        let balance_key = DataKey::Balance(to.clone());
+        let current_balance: i128 = env.storage().persistent().get(&balance_key).unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&balance_key, &(current_balance + amount));
+
+        // Update total supply
+        let total_supply: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total_supply + amount));
+
+        LRNMinted {
+            learner: to,
+            amount,
+        }
+        .publish(&env);
     }
 
     /// Transfer the admin role to a new address (e.g. the CourseMilestone contract).
     pub fn set_admin(env: Env, new_admin: Address) {
-        todo!("require current admin auth, update ADMIN_KEY")
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&ADMIN_KEY)
+            .unwrap_or_else(|| panic_with_error!(&env, LRNError::NotInitialized));
+        admin.require_auth();
+        env.storage().instance().set(&ADMIN_KEY, &new_admin);
     }
 
     // -----------------------------------------------------------------------
-    // SEP-41 read functions
+    // SEP-41 read functions (fungible token interface)
+    // These functions comply with Stellar Enhancement Proposal 41
+    // https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md
     // -----------------------------------------------------------------------
 
     pub fn balance(env: Env, account: Address) -> i128 {
-        todo!("return Balance(account) from persistent storage, default 0")
+        env.storage()
+            .persistent()
+            .get(&DataKey::Balance(account))
+            .unwrap_or(0)
+    }
+
+    /// Returns the learner's on-chain reputation score.
+    ///
+    /// Mirrors `balance` — the LRN balance IS the reputation score.
+    pub fn reputation_score(env: Env, account: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Balance(account))
+            .unwrap_or(0)
     }
 
     pub fn total_supply(env: Env) -> i128 {
-        todo!("return TotalSupply from persistent storage")
+        env.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0)
     }
 
     pub fn decimals(env: Env) -> u32 {
-        todo!("return DECIMALS_KEY from instance storage")
+        env.storage()
+            .instance()
+            .get(&DECIMALS_KEY)
+            .unwrap_or(7)
     }
 
     pub fn name(env: Env) -> String {
-        todo!("return NAME_KEY from instance storage")
+        env.storage()
+            .instance()
+            .get(&NAME_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "LearnToken"))
     }
 
     pub fn symbol(env: Env) -> String {
-        todo!("return SYMBOL_KEY from instance storage")
+        env.storage()
+            .instance()
+            .get(&SYMBOL_KEY)
+            .unwrap_or_else(|| String::from_str(&env, "LRN"))
     }
 
     // -----------------------------------------------------------------------
@@ -114,13 +214,7 @@ impl LearnToken {
         panic_with_error!(&env, LRNError::Soulbound)
     }
 
-    pub fn transfer_from(
-        env: Env,
-        _spender: Address,
-        _from: Address,
-        _to: Address,
-        _amount: i128,
-    ) {
+    pub fn transfer_from(env: Env, _spender: Address, _from: Address, _to: Address, _amount: i128) {
         panic_with_error!(&env, LRNError::Soulbound)
     }
 
@@ -134,7 +228,7 @@ impl LearnToken {
         panic_with_error!(&env, LRNError::Soulbound)
     }
 
-    pub fn allowance(env: Env, _from: Address, _spender: Address) -> i128 {
+    pub fn allowance(_env: Env, _from: Address, _spender: Address) -> i128 {
         0
     }
 }
