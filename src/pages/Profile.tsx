@@ -3,11 +3,11 @@ import { Helmet } from "react-helmet"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { ActivityFeed } from "../components/ActivityFeed"
+import { ReputationBadge } from "../components/ReputationBadge"
 import {
 	NoCredentialsEmptyState,
 	ProfileSkeleton,
 } from "../components/SkeletonLoader"
-import { ReputationBadge } from "../components/ReputationBadge"
 import { WalletContext } from "../providers/WalletProvider"
 import { shortenAddress } from "../util/scholarshipApplications"
 
@@ -22,12 +22,11 @@ const Profile: React.FC = () => {
 	}, [])
 
 	const user = {
+		lrnBalance: "100,000",
 		name: walletAddress ? shortenAddress(walletAddress) : "Learner",
 		address: walletAddress ?? "",
-		lrnBalance: "0 LRN",
 		nfts: [
 			{
-				id: "1",
 				program: "Soroban 101",
 				date: "2024-02-15",
 				artwork: "https://api.placeholder.com/150/150?text=S101",
@@ -69,7 +68,7 @@ const Profile: React.FC = () => {
 			</Helmet>
 
 			<header className="glass-card mb-20 p-12 rounded-[3.5rem] flex flex-col md:flex-row items-center gap-12 relative overflow-hidden group">
-				<div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/10 blur-[100px] rounded-full -z-10 group-hover:bg-brand-purple/10 transition-colors duration-1000" />
+				<div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/10 blur-[100px] rounded-full -z-10 group-hover:bg-brand-purple/10 transition-colors duration-1000"></div>
 				<div className="iridescent-border p-1 rounded-full shadow-2xl shadow-brand-cyan/20">
 					<div className="w-32 h-32 bg-[#05070a] rounded-full flex items-center justify-center text-4xl font-black text-gradient">
 						AR
@@ -113,7 +112,7 @@ const Profile: React.FC = () => {
 								to={`/credentials/${nft.id}`}
 								key={nft.id}
 								aria-label={`Open ${nft.program} credential awarded on ${nft.date}`}
-								className="glass-card rounded-[2.5rem] overflow-hidden hover:border-brand-cyan/40 hover:-translate-y-3 transition-all duration-500 group animate-in fade-in zoom-in duration-700"
+								className="glass-card rounded-[2.5rem] overflow-hidden hover:border-brand-cyan/40 hover:-translate-y-3 transition-all duration-700 group animate-in fade-in zoom-in"
 								style={{ animationDelay: `${index * 150}ms` }}
 							>
 								<div className="relative aspect-square overflow-hidden mb-2">

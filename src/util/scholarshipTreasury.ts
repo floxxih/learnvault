@@ -29,9 +29,11 @@ export interface CreateProposalParams {
 
 export class ScholarshipTreasury implements ScholarshipTreasuryContract {
 	private contractId: string
+	private address: string | null
 
-	constructor(contractId: string) {
+	constructor(contractId: string, address: string | null = null) {
 		this.contractId = contractId
+		this.address = address
 	}
 
 	async createProposal(
@@ -43,7 +45,9 @@ export class ScholarshipTreasury implements ScholarshipTreasuryContract {
 
 			console.log("Creating proposal with params:", params)
 			console.log("Contract ID:", this.contractId)
+			console.log("Submitting from address:", this.address)
 
+			// Simulate contract call delay
 			await new Promise((resolve) => setTimeout(resolve, 1500))
 
 			return mockTxHash
@@ -80,10 +84,12 @@ export class ScholarshipTreasury implements ScholarshipTreasuryContract {
 	}
 }
 
+// Contract factory function
 export const createScholarshipTreasuryContract = (
 	contractId: string,
+	address: string | null = null,
 ): ScholarshipTreasury => {
-	return new ScholarshipTreasury(contractId)
+	return new ScholarshipTreasury(contractId, address)
 }
 
 export const SCHOLARSHIP_TREASURY_CONTRACT_ID =
@@ -93,12 +99,12 @@ export const useScholarshipTreasury = () => {
 	const { address } = useWallet()
 	const contract = createScholarshipTreasuryContract(
 		SCHOLARSHIP_TREASURY_CONTRACT_ID,
+		address ?? null,
 	)
 
 	return {
 		contract,
-		createProposal: (params: CreateProposalParams) =>
-			contract.createProposal(params, address),
+		createProposal: contract.createProposal.bind(contract),
 		getGovernanceTokenBalance:
 			contract.getGovernanceTokenBalance.bind(contract),
 		getMinimumProposalTokens: contract.getMinimumProposalTokens.bind(contract),

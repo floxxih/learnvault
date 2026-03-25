@@ -1,9 +1,9 @@
 import { Button, Tooltip } from "@stellar/design-system"
 import React, { useState, useTransition } from "react"
 import { useTranslation } from "react-i18next"
-import { useToast } from "./Toast/ToastProvider"
 import { useWallet } from "../hooks/useWallet.ts"
 import { mintTestUSDC } from "../util/usdc.ts"
+import { useToast } from "./Toast/ToastProvider"
 
 interface GetTestUSDCButtonProps {
 	amount?: number

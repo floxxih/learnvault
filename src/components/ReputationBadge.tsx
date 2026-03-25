@@ -1,11 +1,11 @@
 import { useLearnToken } from "../hooks/useLearnToken"
 import { useWallet } from "../hooks/useWallet"
-import { formatLrnBalance } from "../util/scholarshipApplications"
 import {
 	getReputationRankFromLrn,
 	lrnBalanceToNumber,
 	type ReputationTier,
 } from "../util/reputationRank"
+import { formatLrnBalance } from "../util/scholarshipApplications"
 
 const TIER_STYLES: Record<
 	ReputationTier,
