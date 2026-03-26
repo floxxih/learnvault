@@ -17,6 +17,7 @@ import { createAuthRouter } from "./routes/auth.routes"
 import { commentsRouter } from "./routes/comments.routes"
 import { coursesRouter } from "./routes/courses.routes"
 import { credentialsRouter } from "./routes/credentials.routes"
+import { enrollmentsRouter } from "./routes/enrollments.routes"
 import { eventsRouter } from "./routes/events.routes"
 import { healthRouter } from "./routes/health.routes"
 import { governanceRouter } from "./routes/governance.routes"
@@ -25,6 +26,7 @@ import { createMeRouter } from "./routes/me.routes"
 import { scholarsRouter } from "./routes/scholars.routes"
 import { uploadRouter } from "./routes/upload.routes"
 import { validatorRouter } from "./routes/validator.routes"
+import { scholarshipsRouter } from "./routes/scholarships.routes"
 import { createAuthService } from "./services/auth.service"
 import {
 	createJwtService,
@@ -79,8 +81,8 @@ if (!isProduction && (!jwtPrivateKey || !jwtPublicKey)) {
 		"⚠️  JWT keys not found in .env — generating ephemeral keys (tokens will reset on restart)",
 	)
 	const ephemeral = generateEphemeralDevJwtKeys()
-	jwtPrivateKey = ephemeral.privateKey
-	jwtPublicKey = ephemeral.publicKey
+	jwtPrivateKey = ephemeral.privateKeyPem
+	jwtPublicKey = ephemeral.publicKeyPem
 }
 
 const nonceStore = createNonceStore(env.REDIS_URL)
@@ -131,6 +133,8 @@ app.use("/api", scholarsRouter)
 app.use("/api", adminMilestonesRouter)
 app.use("/api", scholarsRouter)
 app.use("/api", uploadRouter)
+app.use("/api", enrollmentsRouter)
+app.use("/api", scholarshipsRouter)
 
 // Start event poller (non-prod only for now)
 if (process.env.NODE_ENV !== "production") {
