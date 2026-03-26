@@ -10,6 +10,8 @@ import {
 	YAxis,
 } from "recharts"
 import TxHashLink from "../components/TxHashLink"
+import { useContractIds } from "../hooks/useContractIds"
+import { useUSDC } from "../hooks/useUSDC"
 
 const API_BASE = import.meta.env.VITE_SERVER_URL || "http://localhost:4000"
 
@@ -31,6 +33,10 @@ interface TreasuryEvent {
 }
 
 const Treasury: React.FC = () => {
+	const { scholarshipTreasury } = useContractIds()
+	const { balance: treasuryUSDC, isLoading: treasuryLoading } =
+		useUSDC(scholarshipTreasury)
+
 	const [stats, setStats] = useState<TreasuryStats | null>(null)
 	const [activity, setActivity] = useState<TreasuryEvent[]>([])
 	const [loading, setLoading] = useState(true)
@@ -108,13 +114,22 @@ const Treasury: React.FC = () => {
 
 	const displayStats = stats
 		? {
-				totalTreasury: `${formatUSDC(stats.total_deposited_usdc)} USDC`,
+				// Use contract balance if available, otherwise use API data
+				totalTreasury: treasuryLoading
+					? "Loading…"
+					: treasuryUSDC !== undefined
+						? `${treasuryUSDC.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`
+						: `${formatUSDC(stats.total_deposited_usdc)} USDC`,
 				totalDisbursed: `${formatUSDC(stats.total_disbursed_usdc)} USDC`,
 				scholarsFunded: stats.scholars_funded.toString(),
 				donorsCount: stats.donors_count.toString(),
 			}
 		: {
-				totalTreasury: "Loading...",
+				totalTreasury: treasuryLoading
+					? "Loading…"
+					: treasuryUSDC !== undefined
+						? `${treasuryUSDC.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDC`
+						: "Loading...",
 				totalDisbursed: "Loading...",
 				scholarsFunded: "...",
 				donorsCount: "...",
