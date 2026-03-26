@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, type RenderOptions } from "@testing-library/react"
 import { createElement, type ReactElement, type ReactNode } from "react"
-import { vi } from "vitest"
+import { afterEach, vi } from "vitest"
 
 // Import our custom mocks
 import { mockContractImports } from "./mocks/contracts"

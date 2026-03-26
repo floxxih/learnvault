@@ -2,7 +2,7 @@
  * Utility functions for USDC token operations on Stellar
  */
 
-import { Contract, SorobanRpc, xdr } from "@stellar/stellar-sdk"
+import { Contract, rpc, xdr } from "@stellar/stellar-sdk"
 import { networkPassphrase, rpcUrl } from "../contracts/util"
 
 /**
@@ -76,7 +76,7 @@ export async function getUSDCBalance(address: string): Promise<bigint> {
 	}
 
 	try {
-		const server = new SorobanRpc.Server(rpcUrl, { allowHttp: true })
+		const server = new rpc.Server(rpcUrl, { allowHttp: true })
 
 		// Build the balance() invocation using the low-level Contract helper so
 		// we don't need a generated client.
@@ -117,15 +117,14 @@ export async function getUSDCBalance(address: string): Promise<bigint> {
 
 		const result = await server.simulateTransaction(tx)
 
-		if (SorobanRpc.Api.isSimulationError(result)) {
+		if (rpc.Api.isSimulationError(result)) {
 			// Contract not deployed or address not found — treat as zero balance
 			console.warn("[getUSDCBalance] Simulation error:", result.error)
 			return 0n
 		}
 
-		const returnVal = (
-			result as SorobanRpc.Api.SimulateTransactionSuccessResponse
-		).result?.retval
+		const returnVal = (result as rpc.Api.SimulateTransactionSuccessResponse)
+			.result?.retval
 
 		if (!returnVal) return 0n
 
