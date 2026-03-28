@@ -120,12 +120,25 @@ vi.mock("../hooks/useContractIds", () => ({
 	}),
 }))
 
-// Mock localStorage
+// Mock localStorage with in-memory behavior so storage helpers can be tested.
+const localStorageData = new Map<string, string>()
 const localStorageMock = {
-	getItem: vi.fn(),
-	setItem: vi.fn(),
-	removeItem: vi.fn(),
-	clear: vi.fn(),
+	get length() {
+		return localStorageData.size
+	},
+	clear: vi.fn(() => {
+		localStorageData.clear()
+	}),
+	getItem: vi.fn((key: string) => localStorageData.get(key) ?? null),
+	key: vi.fn(
+		(index: number) => Array.from(localStorageData.keys())[index] ?? null,
+	),
+	removeItem: vi.fn((key: string) => {
+		localStorageData.delete(key)
+	}),
+	setItem: vi.fn((key: string, value: string) => {
+		localStorageData.set(key, value)
+	}),
 }
 Object.defineProperty(window, "localStorage", {
 	value: localStorageMock,
@@ -233,7 +246,9 @@ afterEach(() => {
 	vi.clearAllMocks()
 
 	// Reset localStorage mock
+	localStorageData.clear()
 	localStorageMock.getItem.mockClear()
+	localStorageMock.key.mockClear()
 	localStorageMock.setItem.mockClear()
 	localStorageMock.removeItem.mockClear()
 	localStorageMock.clear.mockClear()

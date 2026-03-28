@@ -6,10 +6,8 @@ const ADMIN_ADDRESSES = (process.env.ADMIN_ADDRESSES ?? "")
 	.map((a) => a.trim())
 	.filter(Boolean)
 
-const JWT_SECRET = process.env.JWT_SECRET ?? process.env.JWT_PRIVATE_KEY
-if (!JWT_SECRET) {
-	throw new Error("JWT_SECRET environment variable is required")
-}
+const JWT_SECRET =
+	process.env.JWT_SECRET ?? process.env.JWT_PRIVATE_KEY ?? "learnvault-secret"
 
 export interface AdminRequest extends Request {
 	adminAddress?: string

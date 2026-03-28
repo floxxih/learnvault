@@ -17,7 +17,7 @@ jest.mock("../db/index", () => ({
 }))
 
 import { pool } from "../db/index"
-import { commentsRouter } from "./comments.routes"
+import { createCommentsRouter } from "./comments.routes"
 
 const mockedQuery = pool.query as jest.Mock
 const mockedConnect = pool.connect as jest.Mock
@@ -33,10 +33,23 @@ const PROPOSAL_AUTHOR = "GPROP_AUTHOR_ADDRESS0"
 const makeToken = (address: string) =>
 	`Bearer ${jwt.sign({ sub: address }, TEST_SECRET)}`
 
+const testJwtService = {
+	signWalletToken: (address: string) => jwt.sign({ sub: address }, TEST_SECRET),
+	verifyWalletToken: (token: string) => {
+		const decoded = jwt.verify(token, TEST_SECRET) as {
+			sub?: string
+			address?: string
+		}
+		const sub = decoded.sub ?? decoded.address ?? ""
+		if (!sub) throw new Error("Invalid token")
+		return { sub }
+	},
+}
+
 const buildApp = (): Express => {
 	const app = express()
 	app.use(express.json())
-	app.use("/api", commentsRouter)
+	app.use("/api", createCommentsRouter(testJwtService))
 	return app
 }
 

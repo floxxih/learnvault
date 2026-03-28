@@ -152,7 +152,7 @@ export function createCommentsRouter(jwtService: JwtService): Router {
 					[id, authorAddress],
 				)
 
-				if (checkResult.rowCount === 0) {
+				if (checkResult.rows.length === 0) {
 					return res
 						.status(404)
 						.json({ error: "Comment not found or unauthorized" })
@@ -201,7 +201,7 @@ export function createCommentsRouter(jwtService: JwtService): Router {
 					[id, voterAddress],
 				)
 
-				if (existingVote.rowCount && existingVote.rowCount > 0) {
+				if (existingVote.rows.length > 0) {
 					if (existingVote.rows[0].vote_type === type) {
 						// Remove vote if clicking the same button
 						await client.query(
@@ -279,7 +279,7 @@ export function createCommentsRouter(jwtService: JwtService): Router {
 					`SELECT proposal_id FROM comments WHERE id = $1 AND deleted_at IS NULL`,
 					[id],
 				)
-				if (commentRes.rowCount === 0)
+				if (commentRes.rows.length === 0)
 					return res.status(404).json({ error: "Comment not found" })
 
 				const proposalId = commentRes.rows[0].proposal_id
@@ -289,7 +289,7 @@ export function createCommentsRouter(jwtService: JwtService): Router {
 					`SELECT author_address FROM proposals WHERE id = $1`,
 					[proposalId],
 				)
-				if (proposalRes.rowCount === 0)
+				if (proposalRes.rows.length === 0)
 					return res.status(404).json({ error: "Proposal not found" })
 
 				const proposalAuthor = proposalRes.rows[0].author_address
