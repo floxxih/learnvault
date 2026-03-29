@@ -1,6 +1,9 @@
 import { formatDistanceToNow } from "date-fns"
 import React, { useId, useState } from "react"
 import ReactMarkdown from "react-markdown"
+import { getAuthToken } from "../util/auth"
+
+const API_BASE = import.meta.env.VITE_SERVER_URL ?? "http://localhost:4000"
 
 export interface Comment {
 	id: number
@@ -50,7 +53,8 @@ const CommentCard: React.FC<CommentCardProps> = ({
 	const authorId = `comment-${comment.id}-author`
 
 	const handleVote = async (type: "upvote" | "downvote") => {
-		const token = localStorage.getItem("auth_token") || "mock-token"
+		const token = getAuthToken()
+		if (!token) return
 		try {
 			const res = await fetch(
 				`${API_URL}/api/comments/${comment.id}/vote`,
@@ -62,7 +66,8 @@ const CommentCard: React.FC<CommentCardProps> = ({
 					},
 					body: JSON.stringify({ type }),
 				},
-			)
+				body: JSON.stringify({ type }),
+			})
 			if (res.ok) onUpdate?.()
 		} catch (err) {
 			console.error("Vote failed", err)
@@ -70,7 +75,8 @@ const CommentCard: React.FC<CommentCardProps> = ({
 	}
 
 	const handlePin = async () => {
-		const token = localStorage.getItem("auth_token") || "mock-token"
+		const token = getAuthToken()
+		if (!token) return
 		try {
 			const res = await fetch(
 				`${API_URL}/api/comments/${comment.id}/pin`,
@@ -80,7 +86,7 @@ const CommentCard: React.FC<CommentCardProps> = ({
 						Authorization: `Bearer ${token}`,
 					},
 				},
-			)
+			})
 			if (res.ok) onUpdate?.()
 		} catch (err) {
 			console.error("Pin failed", err)
@@ -93,7 +99,11 @@ const CommentCard: React.FC<CommentCardProps> = ({
 			return
 		}
 
-		const token = localStorage.getItem("auth_token") || "mock-token"
+		const token = getAuthToken()
+		if (!token) {
+			setReplyError("Sign in to reply.")
+			return
+		}
 		setReplyError(null)
 
 		try {
@@ -111,7 +121,12 @@ const CommentCard: React.FC<CommentCardProps> = ({
 						parentId: comment.id,
 					}),
 				},
-			)
+				body: JSON.stringify({
+					proposalId: comment.proposal_id,
+					content: replyText,
+					parentId: comment.id,
+				}),
+			})
 			if (res.ok) {
 				setReplyText("")
 				setIsReplying(false)

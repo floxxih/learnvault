@@ -2,7 +2,19 @@ import { type Request, type Response } from "express"
 import { milestoneStore } from "../db/milestone-store"
 import { type AdminRequest } from "../middleware/admin.middleware"
 import { credentialService } from "../services/credential.service"
+import { createEmailService } from "../services/email.service"
 import { stellarContractService } from "../services/stellar-contract.service"
+import { templates, toPlainText } from "../templates/email-templates"
+
+const emailService = createEmailService(
+	process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "",
+)
+
+function hasStellarMilestoneCredentials(): boolean {
+	return Boolean(
+		process.env.STELLAR_SECRET_KEY && process.env.COURSE_MILESTONE_CONTRACT_ID,
+	)
+}
 
 // ── GET /api/admin/milestones/pending ────────────────────────────────────────
 
@@ -65,6 +77,10 @@ export async function approveMilestone(
 			res.status(409).json({ error: `Report already ${report.status}` })
 			return
 		}
+		if (!hasStellarMilestoneCredentials()) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 
 		// Trigger on-chain verify_milestone() call
 		const contractResult = await stellarContractService.callVerifyMilestone(
@@ -82,6 +98,31 @@ export async function approveMilestone(
 			rejection_reason: null,
 			contract_tx_hash: contractResult.txHash,
 		})
+
+		try {
+			if (report.scholar_email) {
+				await emailService.sendNotification({
+					to: report.scholar_email,
+					subject: "Milestone Approved ",
+					template: "milestone-approved-admin",
+					data: {
+						name: report.scholar_name || "Scholar",
+						courseTitle: report.course_title || `Course ${report.course_id}`,
+						milestoneTitle:
+							report.milestone_title ||
+							`Milestone ${report.milestone_number ?? report.milestone_id}`,
+						milestoneNumber: String(
+							report.milestone_number ?? report.milestone_id,
+						),
+						reward: String(report.lrn_reward ?? 0),
+						dashboardUrl: `${process.env.FRONTEND_URL || ""}/dashboard`,
+						unsubscribeUrl: "#",
+					},
+				})
+			}
+		} catch (emailErr) {
+			console.error("[admin] approval email failed (non-blocking):", emailErr)
+		}
 
 		let certificate = null
 		try {
@@ -111,6 +152,11 @@ export async function approveMilestone(
 		})
 	} catch (err) {
 		console.error("[admin] approveMilestone error:", err)
+		const msg = err instanceof Error ? err.message : String(err)
+		if (msg.includes("not configured")) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 		res.status(500).json({ error: "Failed to approve milestone" })
 	}
 }
@@ -138,6 +184,10 @@ export async function rejectMilestone(
 			res.status(409).json({ error: `Report already ${report.status}` })
 			return
 		}
+		if (!hasStellarMilestoneCredentials()) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 
 		// Emit on-chain rejection event
 		const contractResult = await stellarContractService.emitRejectionEvent(
@@ -157,7 +207,31 @@ export async function rejectMilestone(
 			contract_tx_hash: contractResult.txHash,
 		})
 
-		// TODO: send email notification to scholar (integrate email service here)
+		try {
+			if (report.scholar_email) {
+				await emailService.sendNotification({
+					to: report.scholar_email,
+					subject: "Milestone Rejected",
+					template: "milestone-rejected-admin",
+					data: {
+						name: report.scholar_name || "Scholar",
+						courseTitle: report.course_title || `Course ${report.course_id}`,
+						milestoneTitle:
+							report.milestone_title ||
+							`Milestone ${report.milestone_number ?? report.milestone_id}`,
+						milestoneNumber: String(
+							report.milestone_number ?? report.milestone_id,
+						),
+						rejectionReason: reason || "",
+						milestoneUrl: `${process.env.FRONTEND_URL || ""}/milestones`,
+						unsubscribeUrl: "#",
+					},
+				})
+			}
+		} catch (emailErr) {
+			console.error("[admin] rejection email failed (non-blocking):", emailErr)
+		}
+
 		console.info(
 			`[admin] Scholar ${report.scholar_address} notified of rejection for milestone ${report.milestone_id} in course ${report.course_id}`,
 		)
@@ -174,6 +248,11 @@ export async function rejectMilestone(
 		})
 	} catch (err) {
 		console.error("[admin] rejectMilestone error:", err)
+		const msg = err instanceof Error ? err.message : String(err)
+		if (msg.includes("not configured")) {
+			res.status(503).json({ error: "Stellar credentials not configured" })
+			return
+		}
 		res.status(500).json({ error: "Failed to reject milestone" })
 	}
 }

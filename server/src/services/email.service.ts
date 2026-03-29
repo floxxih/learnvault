@@ -1,4 +1,4 @@
-import sgMail from "@sendgrid/mail"
+import { Resend } from "resend"
 import {
 	templates,
 	toPlainText,
@@ -13,9 +13,14 @@ export interface EmailOptions {
 }
 
 export class EmailService {
-	constructor(apiKey: string) {
-		if (apiKey) {
-			sgMail.setApiKey(apiKey)
+	private readonly from: string
+	private readonly resendClient?: Resend
+
+	constructor(apiKey?: string) {
+		this.from = process.env.EMAIL_FROM || "notifications@learnvault.xyz"
+		const resendApiKey = process.env.RESEND_API_KEY || apiKey
+		if (resendApiKey) {
+			this.resendClient = new Resend(resendApiKey)
 		}
 	}
 
@@ -37,22 +42,23 @@ export class EmailService {
 	}
 
 	async sendNotification(options: EmailOptions): Promise<boolean> {
-		if (!process.env.EMAIL_API_KEY) {
+		const { html, text } = await this.render(options.template, options.data)
+
+		if (!this.resendClient) {
 			console.log(
 				`[EmailService] MOCK SEND to ${options.to}: ${options.subject}`,
 			)
+			console.log(html)
 			return true
 		}
 
 		try {
-			const { html, text } = await this.render(options.template, options.data)
-
-			await sgMail.send({
+			await this.resendClient.emails.send({
+				from: this.from,
 				to: options.to,
-				from: process.env.EMAIL_FROM || "notifications@learnvault.xyz",
 				subject: options.subject,
-				text,
 				html,
+				text,
 			})
 
 			return true
@@ -61,32 +67,44 @@ export class EmailService {
 			return false
 		}
 	}
+
 	async sendAdminMilestoneNotification(
 		scholarName: string,
 		courseSlug: string,
-		milestoneId: string
+		milestoneId: string,
 	): Promise<boolean> {
-		const adminEmail = process.env.ADMIN_EMAIL;
+		const adminEmails = process.env.ADMIN_EMAILS
 
-		if (!adminEmail) {
-			console.warn("[EmailService] ADMIN_EMAIL not set, skipping notification.");
-			return false;
+		if (!adminEmails) {
+			console.warn(
+				"[EmailService] ADMIN_EMAILS not set, skipping notification.",
+			)
+			return false
 		}
 
-		const adminLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/reviews`;
+		const adminLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/admin/reviews`
 
-		return this.sendNotification({
-			to: adminEmail,
-			subject: `New Submission: ${scholarName}`,
-			template: "admin-alert",
-			data: {
-				body: `Scholar <strong>${scholarName}</strong> has submitted a report for <strong>${courseSlug}</strong> (Milestone ${milestoneId}).`,
-				adminUrl: adminLink,
-				unsubscribeUrl: "#"
-			}
-		});
+		const body = `New milestone submission from ${scholarName} for course ${courseSlug}, milestone ${milestoneId}. Review it here: ${adminLink}`
+
+		const emails = adminEmails.split(",").map((email) => email.trim())
+
+		let allSent = true
+		for (const email of emails) {
+			const success = await this.sendNotification({
+				to: email,
+				subject: `New Milestone Submission`,
+				template: "admin-alert",
+				data: {
+					body,
+					adminUrl: adminLink,
+					unsubscribeUrl: "#",
+				},
+			})
+			if (!success) allSent = false
+		}
+
+		return allSent
 	}
 }
 
-export const createEmailService = (apiKey: string) => new EmailService(apiKey)
-
+export const createEmailService = (apiKey?: string) => new EmailService(apiKey)

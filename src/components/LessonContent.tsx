@@ -1,7 +1,8 @@
+import { Button } from "@stellar/design-system"
 import React from "react"
 import ReactMarkdown from "react-markdown"
 import { Link } from "react-router-dom"
-import { type Lesson } from "../data/lessons"
+import { type CourseLesson as Lesson } from "../types/courses"
 
 // A simple mock skeleton to match what's needed for content loading state
 export const LessonContentSkeleton = () => (
@@ -91,23 +92,24 @@ const LessonContent: React.FC<LessonContentProps> = ({
 					)}
 				</div>
 
-				<button
+				<Button
 					onClick={onMarkComplete}
 					disabled={isCompleted || isCompleting}
-					className={`px-6 py-3 rounded-xl font-bold transition-all shadow-lg ${
+					isLoading={isCompleting}
+					variant={isCompleted ? "secondary" : "primary"}
+					size="md"
+					className={
 						isCompleted
-							? "bg-brand-emerald/20 text-brand-emerald border border-brand-emerald cursor-default"
-							: isCompleting
-								? "bg-brand-cyan/50 text-white cursor-wait animate-pulse"
-								: "bg-gradient-to-r from-brand-cyan to-brand-blue text-white hover:scale-105 active:scale-95"
-					}`}
+							? "opacity-100 bg-brand-emerald/20 text-brand-emerald border-brand-emerald"
+							: "shadow-lg"
+					}
 				>
-					{isCompleting
-						? "Confirming..."
-						: isCompleted
-							? "Lesson Completed ✓"
+					{isCompleted
+						? "Lesson Completed ✓"
+						: isCompleting
+							? "Confirming..."
 							: "Mark as Complete"}
-				</button>
+				</Button>
 			</div>
 		</section>
 	)

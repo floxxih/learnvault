@@ -1,6 +1,9 @@
 # LearnVault — Official Documentation
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Contracts CI](https://github.com/robertocarlous/learnvault/actions/workflows/contracts-ci.yml/badge.svg)](https://github.com/robertocarlous/learnvault/actions/workflows/contracts-ci.yml)
@@ -155,6 +158,55 @@ funds automatically return to the treasury.
 Mints a **soulbound ERC721 credential** to scholars who complete their funded
 programs. Non-transferable, tamper-proof, and permanently verifiable on-chain.
 Shareable with employers, DAOs, and the broader ecosystem.
+
+## Contract Interaction Flow
+
+```mermaid
+sequenceDiagram
+    participant Learner
+    participant Frontend
+    participant CourseMilestone
+    participant LearnToken
+    participant Donor
+    participant ScholarshipTreasury
+    participant GovernanceToken
+    participant GOV_Holder
+    participant MilestoneEscrow
+    participant Scholar
+    participant ScholarNFT
+    participant Treasury
+
+    Note over Learner, ScholarNFT: Learning & Reputation Building
+    Learner->>Frontend: Complete milestone
+    Frontend->>CourseMilestone: complete_milestone()
+    CourseMilestone->>LearnToken: mint(learner, lrn)
+    LearnToken-->>Learner: LearnTokens earned
+
+    Note over Donor, GovernanceToken: Treasury Funding
+    Donor->>Frontend: Deposit USDC
+    Frontend->>ScholarshipTreasury: deposit(usdc)
+    ScholarshipTreasury->>GovernanceToken: mint(donor, gov)
+    GovernanceToken-->>Donor: GovernanceTokens earned
+
+    Note over Learner, MilestoneEscrow: Scholarship Process
+    Learner->>Frontend: Submit scholarship proposal
+    Frontend->>ScholarshipTreasury: submit_proposal()
+
+    GOV_Holder->>Frontend: Vote on proposal
+    Frontend->>ScholarshipTreasury: vote()
+
+    ScholarshipTreasury->>MilestoneEscrow: create() [on approval]
+
+    Note over MilestoneEscrow, Treasury: Milestone Completion
+    MilestoneEscrow->>Scholar: transfer(usdc) [on milestone release]
+
+    Note over MilestoneEscrow, Treasury: Timeout Handling
+    MilestoneEscrow->>Treasury: transfer(usdc) [on timeout]
+
+    Note over Scholar, ScholarNFT: Program Completion
+    Scholar->>ScholarNFT: mint() [on program completion]
+    ScholarNFT-->>Scholar: ScholarNFT credential earned
+```
 
 ---
 
@@ -426,6 +478,9 @@ To contribute:
 
 All contributors are recognized on-chain and in our official documentation.
 
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We
+expect all participants to uphold these standards.
+
 ---
 
 ## Resources
@@ -455,7 +510,8 @@ effort._ \n## Architecture Decisions\n\n- [ADR-001.md](docs/adr/ADR-001.md)\n-
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Thanks goes to these wonderful people
+([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->

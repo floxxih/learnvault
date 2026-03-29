@@ -1,8 +1,10 @@
 import { type Api } from "@stellar/stellar-sdk/rpc"
+import type { LearnTokenInfo } from "../types/contracts"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useToast } from "../components/Toast/ToastProvider"
 import { ErrorCode, createAppError } from "../types/errors"
+import { logger } from "../utils/logger"
 import { parseError, isUserRejection } from "../utils/errors"
 import { useContractIds } from "./useContractIds"
 import { useSubscription } from "./useSubscription"
@@ -23,7 +25,7 @@ const generatedContractModules = import.meta.glob("../contracts/*.ts")
 const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
 	const moduleLoader = generatedContractModules["../contracts/learn_token.ts"]
 	if (!moduleLoader) {
-		console.warn(
+		logger.warn(
 			createAppError(
 				ErrorCode.CONTRACT_NOT_DEPLOYED,
 				"LearnToken contract module not found",
@@ -38,7 +40,7 @@ const loadLearnTokenClient = async (): Promise<ContractRecord | null> => {
 
 		return (mod.default as ContractRecord) ?? mod
 	} catch (err) {
-		console.warn(
+		logger.warn(
 			createAppError(
 				ErrorCode.CONTRACT_NOT_DEPLOYED,
 				"Failed to load LearnToken contract",
@@ -95,6 +97,9 @@ const BALANCE_QUERY_KEY_PREFIX = ["learnToken", "balance"] as const
 
 const BALANCE_STALE_TIME = 5 * 60 * 1000 // 5 minutes
 
+// The expected contract version this client was generated against.
+const EXPECTED_CONTRACT_VERSION = "1.0.0"
+
 // The LearnToken contract emits a MilestoneCompleted event. Soroban encodes
 // the first topic as a Symbol from the #[contractevent] struct name. The SDK
 // uses symbol_short! which is capped at 9 chars, so the actual on-chain topic
@@ -132,6 +137,37 @@ export function useLearnToken(address?: string): UseLearnTokenResult {
 
 	const targetAddress = address ?? walletAddress
 	const contractReady = isDeployed(contractId)
+
+	// ---------------------------------------------------------------------------
+	// Version check — warn if deployed contract version doesn't match expected
+	// ---------------------------------------------------------------------------
+
+	useQuery({
+		queryKey: ["learnToken", "version", contractId],
+		queryFn: async (): Promise<string | null> => {
+			const client = await loadLearnTokenClient()
+			if (!client || !contractReady) return null
+
+			const fn = toMethod(client, "get_version")
+			if (!fn) return null
+
+			try {
+				const raw = await fn({})
+				const version = String(unwrapResult(raw) ?? "")
+				if (version && version !== EXPECTED_CONTRACT_VERSION) {
+					logger.warn(
+						`[LearnToken] Version mismatch: expected ${EXPECTED_CONTRACT_VERSION}, got ${version}. ` +
+							"Client bindings may be out of date.",
+					)
+				}
+				return version
+			} catch {
+				return null
+			}
+		},
+		enabled: contractReady,
+		staleTime: Infinity,
+	})
 
 	// ---------------------------------------------------------------------------
 	// Balance query

@@ -1,12 +1,15 @@
 import { type NextFunction, type Request, type Response } from "express"
 import jwt from "jsonwebtoken"
 
-const ADMIN_ADDRESSES = (process.env.ADMIN_ADDRESSES ?? "")
-	.split(",")
-	.map((a) => a.trim())
-	.filter(Boolean)
+const JWT_SECRET =
+	process.env.JWT_SECRET ?? process.env.JWT_PRIVATE_KEY ?? "learnvault-secret"
 
-const JWT_SECRET = process.env.JWT_SECRET || "learnvault-secret"
+function getAdminAddresses(): string[] {
+	return (process.env.ADMIN_ADDRESSES ?? "")
+		.split(",")
+		.map((a) => a.trim())
+		.filter(Boolean)
+}
 
 export interface AdminRequest extends Request {
 	adminAddress?: string
@@ -34,7 +37,7 @@ export function requireAdmin(
 	let decoded: { address?: string; sub?: string }
 
 	try {
-		decoded = jwt.verify(token, JWT_SECRET) as {
+		decoded = jwt.verify(token, JWT_SECRET!) as {
 			address?: string
 			sub?: string
 		}
@@ -49,12 +52,15 @@ export function requireAdmin(
 		return
 	}
 
+	const adminAddresses = getAdminAddresses()
+
 	// If ADMIN_ADDRESSES is configured, enforce the allowlist
-	if (ADMIN_ADDRESSES.length > 0 && !ADMIN_ADDRESSES.includes(address)) {
+	if (adminAddresses.length > 0 && !adminAddresses.includes(address)) {
 		res.status(403).json({ error: "Forbidden: not an admin address" })
 		return
 	}
 
 	req.adminAddress = address
+	req.walletAddress = address
 	next()
 }
