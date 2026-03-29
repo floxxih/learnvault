@@ -1,10 +1,8 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, Env, IntoVal, Val, Vec,
-    testutils::{Address as _, Ledger, LedgerInfo, MockAuth, MockAuthInvoke, Events as _},
-    Address, Env, IntoVal, Symbol, Val, Vec, symbol_short,
-    testutils::{Address as _, Events, Ledger, LedgerInfo, MockAuth, MockAuthInvoke},
+    Address, Env, IntoVal, Symbol, Val, Vec,
+    testutils::{Address as _, Events as _, Ledger, LedgerInfo, MockAuth, MockAuthInvoke},
     token::{StellarAssetClient, TokenClient},
 };
 
