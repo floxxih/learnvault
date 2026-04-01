@@ -2,8 +2,7 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl,
-    contracttype,
+    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
     panic_with_error, symbol_short,
 };
 
@@ -20,8 +19,7 @@ pub struct VerifyBatchEntry {
 mod interface;
 use interface::LearnTokenClient;
 
-#[path = "../../shared/upgrade.rs"]
-mod upgrade;
+use learnvault_shared::upgrade;
 
 pub use upgrade::ContractUpgraded;
 
@@ -306,11 +304,7 @@ impl CourseMilestone {
 
         env.events().publish(
             (symbol_short!("enrolled"),),
-            SubmittedEventData {
-                learner,
-                course_id,
-                evidence_uri: String::from_str(&env, ""),
-            },
+            EnrolledEventData { learner, course_id },
         );
     }
 
@@ -389,15 +383,6 @@ impl CourseMilestone {
         } else {
             MilestoneStatus::NotStarted
         }
-    }
-
-    pub fn get_milestone_status(
-        env: Env,
-        learner: Address,
-        course_id: String,
-        milestone_id: u32,
-    ) -> MilestoneStatus {
-        Self::get_milestone_state(env, learner, course_id, milestone_id)
     }
 
     pub fn get_milestone_submission(
@@ -579,11 +564,7 @@ impl CourseMilestone {
     /// Each [`VerifyBatchEntry`] is `(learner, course_id, milestone_id, lrn_reward)`.
     /// If any single verification fails the entire batch reverts.
     /// Emits a `MilestoneCompleted` event for each successful entry.
-    pub fn batch_verify_milestones(
-        env: Env,
-        admin: Address,
-        submissions: Vec<VerifyBatchEntry>,
-    ) {
+    pub fn batch_verify_milestones(env: Env, admin: Address, submissions: Vec<VerifyBatchEntry>) {
         if Self::is_paused(env.clone()) {
             panic_with_error!(&env, Error::ContractPaused);
         }
@@ -595,6 +576,9 @@ impl CourseMilestone {
         if admin != stored_admin {
             panic_with_error!(&env, Error::Unauthorized);
         }
+
+        let learn_token_address: Address = env.storage().instance().get(&LEARN_TOKEN_KEY).unwrap();
+        let learn_token_client = LearnTokenClient::new(&env, &learn_token_address);
 
         let mut i = 0;
         while i < submissions.len() {
@@ -629,10 +613,6 @@ impl CourseMilestone {
                 entry.milestone_id,
             );
             env.storage().persistent().set(&completed_key, &true);
-
-            let learn_token_address: Address =
-                env.storage().instance().get(&LEARN_TOKEN_KEY).unwrap();
-            let learn_token_client = LearnTokenClient::new(&env, &learn_token_address);
             learn_token_client.mint(&entry.learner, &entry.lrn_reward);
 
             Self::extend_persistent(&env, &state_key);
@@ -746,11 +726,8 @@ impl CourseMilestone {
 
         let mut milestone_id = 1_u32;
         while milestone_id <= config.milestone_count {
-            let state_key = DataKey::MilestoneState(
-                learner.clone(),
-                course_id.clone(),
-                milestone_id,
-            );
+            let state_key =
+                DataKey::MilestoneState(learner.clone(), course_id.clone(), milestone_id);
             let state = env
                 .storage()
                 .persistent()

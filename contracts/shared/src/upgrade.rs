@@ -46,11 +46,11 @@ fn zero_hash(env: &Env) -> BytesN<32> {
     BytesN::from_array(env, &[0; 32])
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "testutils"))]
 pub mod testutils {
     use soroban_sdk::{BytesN, Env};
 
-    pub const UPGRADE_TARGET_WASM: &[u8] = include_bytes!("../testdata/upgrade-target.wasm");
+    pub const UPGRADE_TARGET_WASM: &[u8] = include_bytes!("../../testdata/upgrade-target.wasm");
 
     pub fn upload_upgrade_target(env: &Env) -> BytesN<32> {
         env.deployer().upload_contract_wasm(UPGRADE_TARGET_WASM)

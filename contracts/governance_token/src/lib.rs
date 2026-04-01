@@ -18,8 +18,7 @@ use soroban_sdk::{
     contracttype, panic_with_error, symbol_short,
 };
 
-#[path = "../../shared/upgrade.rs"]
-mod upgrade;
+use learnvault_shared::upgrade;
 
 pub use upgrade::ContractUpgraded;
 
@@ -302,10 +301,7 @@ impl GovernanceToken {
 
     /// Returns `true` if the contract is currently paused.
     pub fn is_paused(env: Env) -> bool {
-        env.storage()
-            .instance()
-            .get(&PAUSED_KEY)
-            .unwrap_or(false)
+        env.storage().instance().get(&PAUSED_KEY).unwrap_or(false)
     }
 
     // -----------------------------------------------------------------------
@@ -561,11 +557,7 @@ impl GovernanceToken {
     }
 
     fn assert_not_paused(env: &Env) {
-        let paused: bool = env
-            .storage()
-            .instance()
-            .get(&PAUSED_KEY)
-            .unwrap_or(false);
+        let paused: bool = env.storage().instance().get(&PAUSED_KEY).unwrap_or(false);
         if paused {
             panic_with_error!(env, GOVError::ContractPaused);
         }
@@ -608,7 +600,12 @@ mod test {
         (id, admin, client)
     }
 
-    fn authorize_upgrade(env: &Env, contract_id: &Address, signer: &Address, wasm_hash: &BytesN<32>) {
+    fn authorize_upgrade(
+        env: &Env,
+        contract_id: &Address,
+        signer: &Address,
+        wasm_hash: &BytesN<32>,
+    ) {
         env.mock_auths(&[MockAuth {
             address: signer,
             invoke: &MockAuthInvoke {

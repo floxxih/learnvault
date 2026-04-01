@@ -15,8 +15,7 @@ const Donor: React.FC = () => {
 	const { balance: usdcBalance, isLoading: usdcLoading } = useUSDC(address)
 	const [showDepositForm, setShowDepositForm] = useState(false)
 	const hasActivity =
-		stats.totalContributed > 0 ||
-		stats.governanceBalance > 0 ||
+		stats.total_contributed > 0n ||
 		contributions.length > 0 ||
 		votes.length > 0 ||
 		scholars.length > 0
@@ -107,25 +106,19 @@ const Donor: React.FC = () => {
 					/>
 					<StatCard
 						label="Total Contributed"
-						value={`$${stats.totalContributed.toLocaleString()}`}
+						value={`$${(Number(stats.total_contributed) / 1e7).toLocaleString()}`}
 						icon="💰"
 						color="text-brand-cyan"
 					/>
 					<StatCard
-						label="Governance Tokens"
-						value={stats.governanceBalance.toLocaleString()}
+						label="Votes Cast"
+						value={stats.votes_cast.toString()}
 						icon="🗳️"
 						color="text-brand-purple"
 					/>
 					<StatCard
-						label="Proposals Voted"
-						value={stats.proposalsVoted.toString()}
-						icon="✓"
-						color="text-brand-emerald"
-					/>
-					<StatCard
 						label="Scholars Funded"
-						value={stats.scholarsFunded.toString()}
+						value={stats.scholars_funded.toString()}
 						icon="🎓"
 						color="text-brand-blue"
 					/>
@@ -136,12 +129,12 @@ const Donor: React.FC = () => {
 			<div className="space-y-20">
 				<MyContributions
 					contributions={contributions}
-					totalContributed={stats.totalContributed}
+					totalContributed={Number(stats.total_contributed) / 1e7}
 				/>
 
 				<GovernancePower
-					balance={stats.governanceBalance}
-					percentage={stats.governancePercentage}
+					balance={stats.votes_cast}
+					percentage={0}
 				/>
 
 				<ActiveVotes votes={votes} />

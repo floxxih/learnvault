@@ -19,8 +19,7 @@ use soroban_sdk::{
     panic_with_error, symbol_short,
 };
 
-#[path = "../../shared/upgrade.rs"]
-mod upgrade;
+use learnvault_shared::upgrade;
 
 pub use upgrade::ContractUpgraded;
 

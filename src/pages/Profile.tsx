@@ -118,7 +118,7 @@ const Profile: React.FC = () => {
 				<meta property="og:image" content={`${siteUrl}/og-image.png`} />
 				<meta
 					property="og:url"
-					content={`${siteUrl}/profile/${user.address}`}
+					content={`${siteUrl}/profile/${walletAddress ?? ""}`}
 				/>
 				<meta name="twitter:card" content="summary_large_image" />
 			</Helmet>
@@ -172,15 +172,8 @@ const Profile: React.FC = () => {
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 						{nfts.map((nft, index) => (
-				{credentials.length === 0 ? (
-					<NoCredentialsEmptyState />
-				) : (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-						{credentials.map((cred, index) => (
-							<Link
-								to={`/credentials/${cred.token_id}`}
-								key={cred.token_id}
-								aria-label={`Open ${cred.programName} credential awarded on ${cred.minted_at}`}
+							<div
+								key={nft.id}
 								className="glass-card rounded-[2.5rem] overflow-hidden hover:border-brand-cyan/40 hover:-translate-y-3 transition-all duration-700 group animate-in fade-in zoom-in"
 								style={{ animationDelay: `${index * 150}ms` }}
 							>
@@ -189,17 +182,13 @@ const Profile: React.FC = () => {
 										<img
 											src={nft.artwork}
 											alt={`Credential artwork for ${nft.program}`}
-									{cred.artworkUrl ? (
-										<img
-											src={cred.artworkUrl}
-											alt={`Credential artwork for ${cred.programName}`}
 											className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100"
 											loading="lazy"
 										/>
 									) : (
 										<div className="w-full h-full bg-gradient-to-br from-brand-cyan/20 to-brand-purple/20 flex items-center justify-center">
 											<span className="text-4xl font-black text-white/40">
-												{cred.programName?.charAt(0) ?? "?"}
+												{nft.program?.charAt(0) ?? "?"}
 											</span>
 										</div>
 									)}
@@ -215,24 +204,18 @@ const Profile: React.FC = () => {
 								</div>
 								<div className="p-8">
 									<h3 className="text-lg font-black mb-2 leading-tight group-hover:text-brand-cyan transition-colors">
-										{cred.programName ?? cred.course_id}
+										{nft.program}
 									</h3>
 									<div className="flex justify-between items-center gap-4">
 										<p className="text-[10px] text-white/70 uppercase font-black tracking-widest">
-											{cred.minted_at
-												? new Date(cred.minted_at).toLocaleDateString("en-US", {
-														year: "numeric",
-														month: "short",
-														day: "numeric",
-													})
-												: "Unknown"}
+											{nft.date}
 										</p>
 										<span className="text-[10px] text-brand-emerald font-black uppercase tracking-widest">
-											{cred.revoked ? "Revoked" : "Verified ✓"}
+											Verified ✓
 										</span>
 									</div>
 								</div>
-							</Link>
+							</div>
 						))}
 					</div>
 				)}

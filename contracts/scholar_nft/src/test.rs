@@ -208,7 +208,10 @@ fn get_metadata_uri_round_trip() {
     let env = Env::default();
     let (_, _admin, client) = setup(&env);
     let scholar = Address::generate(&env);
-    let uri = cid(&env, "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi");
+    let uri = cid(
+        &env,
+        "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    );
 
     env.mock_all_auths();
     let token_id = client.mint(&scholar, &uri);

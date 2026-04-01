@@ -1,8 +1,8 @@
 extern crate std;
 
 use soroban_sdk::{
-    Address, BytesN, Env, IntoVal, String, Symbol, Val, Vec, contract, contractimpl,
-    contracttype, symbol_short,
+    Address, BytesN, Env, IntoVal, String, Symbol, Val, Vec, contract, contractimpl, contracttype,
+    symbol_short,
     testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke},
 };
 
@@ -270,7 +270,7 @@ fn verify_milestone_mints_lrn_and_marks_completion() {
     client.verify_milestone(&admin, &learner, &course_id, &1, &125);
 
     assert_eq!(
-        client.get_milestone_status(&learner, &course_id, &1),
+        client.get_milestone_state(&learner, &course_id, &1),
         MilestoneStatus::Approved
     );
     assert!(client.is_completed(&learner, &course_id, &1));
@@ -426,7 +426,7 @@ fn reject_milestone_marks_rejected_and_clears_submission() {
     client.reject_milestone(&admin, &learner, &course_id, &1);
 
     assert_eq!(
-        client.get_milestone_status(&learner, &course_id, &1),
+        client.get_milestone_state(&learner, &course_id, &1),
         MilestoneStatus::Rejected
     );
     assert!(
@@ -505,7 +505,7 @@ fn complete_milestone_marks_completion_and_emits_reward_event() {
 
     assert!(client.is_completed(&learner, &course_id, &2));
     assert_eq!(
-        client.get_milestone_status(&learner, &course_id, &2),
+        client.get_milestone_state(&learner, &course_id, &2),
         MilestoneStatus::Approved
     );
 }
@@ -594,6 +594,7 @@ fn complete_milestone_fails_without_admin_auth() {
 
 // ── batch_verify_milestones ──────────────────────────────────────────────────
 
+#[allow(dead_code)]
 fn verify_milestone_helper(
     env: &Env,
     contract_id: &Address,
@@ -660,11 +661,11 @@ fn batch_verify_milestones_happy_path() {
     client.batch_verify_milestones(&admin, &submissions);
 
     assert_eq!(
-        client.get_milestone_status(&learner1, &course_id, &1),
+        client.get_milestone_state(&learner1, &course_id, &1),
         MilestoneStatus::Approved,
     );
     assert_eq!(
-        client.get_milestone_status(&learner2, &course_id, &1),
+        client.get_milestone_state(&learner2, &course_id, &1),
         MilestoneStatus::Approved,
     );
     assert_eq!(token_client.balance(&learner1), 100);
@@ -718,7 +719,7 @@ fn batch_verify_milestones_reverts_on_invalid_entry() {
 
     // Because the batch reverted, learner1 should NOT be marked approved
     assert_eq!(
-        client.get_milestone_status(&learner1, &course_id, &1),
+        client.get_milestone_state(&learner1, &course_id, &1),
         MilestoneStatus::Pending,
     );
     // And no tokens were minted
@@ -753,13 +754,7 @@ fn state_persists_after_upgrade() {
     enroll(&env, &contract_id, &learner, &client, &course_id);
 
     let wasm_hash = crate::upgrade::testutils::upload_upgrade_target(&env);
-    authorize(
-        &env,
-        &admin,
-        &contract_id,
-        "upgrade",
-        (wasm_hash.clone(),),
-    );
+    authorize(&env, &admin, &contract_id, "upgrade", (wasm_hash.clone(),));
     client.upgrade(&wasm_hash);
 
     let stored_course = env.as_contract(&contract_id, || {

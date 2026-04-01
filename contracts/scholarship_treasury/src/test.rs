@@ -7,8 +7,7 @@ use soroban_sdk::{
 };
 
 use crate::{
-    DataKey, Error, Proposal, ProposalStatus, ScholarshipTreasury, ScholarshipTreasuryClient,
-    token,
+    DataKey, Error, Proposal, ProposalStatus, ScholarshipTreasury, ScholarshipTreasuryClient, token,
 };
 
 const DEFAULT_QUORUM: i128 = 1;

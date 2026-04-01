@@ -9,15 +9,7 @@
 // ---------------------------------------------------------------------------
 // Canonical on-chain / shared contract types (as requested)
 // ---------------------------------------------------------------------------
-export interface Proposal {
-	id: number
-	proposer: string
-	amount: bigint
-	description: string
-	votes_for: bigint
-	votes_against: bigint
-	status: "pending" | "approved" | "rejected"
-}
+
 
 export interface MilestoneReport {
 	id: string
@@ -53,10 +45,6 @@ export type { Proposal, RawContractProposal } from "./governance"
 // Milestone types (on-chain CourseMilestone)
 // ---------------------------------------------------------------------------
 export type { MilestoneReportFormValues, SubmittedMilestoneReport } from "./milestone"
-export type {
-	MilestoneReportFormValues,
-	SubmittedMilestoneReport,
-} from "./milestone"
 
 // ---------------------------------------------------------------------------
 // Existing app-specific helper types kept for backward compatibility with
@@ -109,7 +97,3 @@ export interface RpcEvent {
 	value?: unknown
 }
 
-// Re-export some legacy, more-detailed governance types from the dedicated
-// governance file so consumers that rely on the raw contract shape can still
-// import them via the single barrel when needed.
-export { RawContractProposal } from "./governance"

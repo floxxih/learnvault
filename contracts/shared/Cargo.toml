@@ -1,5 +1,5 @@
 [package]
-name = "learn-token"
+name = "learnvault-shared"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -7,14 +7,14 @@ publish = false
 version.workspace = true
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib"]
 doctest = false
 
+[features]
+testutils = []
+
 [dependencies]
-learnvault-shared = { workspace = true }
 soroban-sdk = { workspace = true }
 
 [dev-dependencies]
-learnvault-shared = { workspace = true, features = ["testutils"] }
 soroban-sdk = { workspace = true, features = ["testutils"] }
-proptest = { workspace = true }

@@ -2,12 +2,11 @@
 #![allow(deprecated)]
 
 use soroban_sdk::{
-    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl,
-    contracttype, panic_with_error, symbol_short,
+    Address, BytesN, Env, String, Symbol, Vec, contract, contracterror, contractimpl, contracttype,
+    panic_with_error, symbol_short,
 };
 
-#[path = "../../shared/upgrade.rs"]
-mod upgrade;
+use learnvault_shared::upgrade;
 
 pub use upgrade::ContractUpgraded;
 
@@ -105,7 +104,9 @@ impl ScholarNFT {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Counter, &0_u64);
         let scholars: Vec<Address> = Vec::new(&env);
-        env.storage().persistent().set(&DataKey::Scholars, &scholars);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Scholars, &scholars);
         Self::extend_persistent(&env, &DataKey::Scholars);
 
         env.events()
@@ -148,7 +149,9 @@ impl ScholarNFT {
             .get(&DataKey::Scholars)
             .unwrap_or_else(|| Vec::new(&env));
         scholars.push_back(to.clone());
-        env.storage().persistent().set(&DataKey::Scholars, &scholars);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Scholars, &scholars);
         Self::extend_persistent(&env, &DataKey::Scholars);
 
         env.events().publish(
